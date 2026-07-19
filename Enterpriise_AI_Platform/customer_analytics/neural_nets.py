@@ -1,13 +1,29 @@
 # customer_analytics/neural_nets.py
 
+import os
 import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam, SGD, RMSprop
-import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
+
+
+
+def ensure_directory(path):
+    if os.path.exists(path):
+        if os.path.isdir(path):
+            return
+        os.remove(path)
+    os.makedirs(path, exist_ok=True)
+
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SERIALIZED_DIR = os.path.join(PROJECT_ROOT, "serialized_weights")
+ensure_directory(SERIALIZED_DIR)
+DEFAULT_MODEL_PATH = os.path.join(SERIALIZED_DIR, "customer_model.keras")
+DEFAULT_SCALER_PATH = os.path.join(SERIALIZED_DIR, "scaler.pkl")
 
 
 class NeuralNetworkEngine:
@@ -186,8 +202,8 @@ class NeuralNetworkEngine:
     def predict(self, sample):
 
         if self.model is None:
-            if os.path.exists("customer_model.keras"):
-                self.load_model("customer_model.keras")
+            if os.path.exists(DEFAULT_MODEL_PATH):
+                self.load_model(DEFAULT_MODEL_PATH)
             else:
                 raise Exception("No trained model found.")
 
@@ -224,12 +240,12 @@ class NeuralNetworkEngine:
     # Save Model
     ####################################################
 
-    def save_model(self, path="customer_model.keras"):
+    def save_model(self, path=DEFAULT_MODEL_PATH):
         self.model.save(path)
 
     ####################################################
     # Load Model
     ####################################################
 
-    def load_model(self, path="customer_model.keras"):
+    def load_model(self, path=DEFAULT_MODEL_PATH):
         self.model = tf.keras.models.load_model(path)
