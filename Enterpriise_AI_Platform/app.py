@@ -1,4 +1,6 @@
+import json
 import os
+from datetime import datetime
 import joblib
 import streamlit as st
 import pandas as pd
@@ -6,8 +8,28 @@ import numpy as np
 import matplotlib.pyplot as plt
 from customer_analytics.neural_nets import NeuralNetworkEngine
 
+
+def ensure_directory(path):
+    if os.path.exists(path):
+        if os.path.isdir(path):
+            return
+        os.remove(path)
+    os.makedirs(path, exist_ok=True)
+
+
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+SERIALIZED_DIR = os.path.join(PROJECT_ROOT, "serialized_weights")
+REPORTS_DIR = os.path.join(PROJECT_ROOT, "analytical_reports")
+MODEL_PATH = os.path.join(SERIALIZED_DIR, "customer_model.keras")
+SCALER_PATH = os.path.join(SERIALIZED_DIR, "scaler.pkl")
+TRAINING_REPORT_PATH = os.path.join(REPORTS_DIR, "training_results.json")
+PREDICTION_REPORT_PATH = os.path.join(REPORTS_DIR, "prediction_results.json")
+
+ensure_directory(SERIALIZED_DIR)
+ensure_directory(REPORTS_DIR)
+
 st.set_page_config(
-    page_title="Customer Conversion Engine",
+    page_title="Enterprise AI Platform",
     layout="wide"
 )
 
@@ -15,7 +37,7 @@ st.title("Customer Conversion Engine")
 st.write("Neural Network Based Customer Purchase Prediction")
 
 if "trained" not in st.session_state:
-    st.session_state["trained"] = os.path.exists("customer_model.keras") and os.path.exists("scaler.pkl")
+    st.session_state["trained"] = os.path.exists(MODEL_PATH) and os.path.exists(SCALER_PATH)
 
 # ===============================
 # Upload Dataset
@@ -128,8 +150,29 @@ if uploaded_file is not None:
             engine.build_model(X.shape[1])
             history, accuracy = engine.train(X, y)
 
-            engine.save_model("customer_model.keras")
-            joblib.dump(engine.scaler, "scaler.pkl")
+            engine.save_model(MODEL_PATH)
+            joblib.dump(engine.scaler, SCALER_PATH)
+
+            training_report = {
+                "model_type": model_type,
+                "activation": activation,
+                "optimizer": optimizer,
+                "epochs": epochs,
+                "batch_size": batch_size,
+                "accuracy": float(accuracy),
+                "history": {
+                    "accuracy": [float(value) for value in history.history.get("accuracy", [])],
+                    "val_accuracy": [float(value) for value in history.history.get("val_accuracy", [])],
+                    "loss": [float(value) for value in history.history.get("loss", [])],
+                    "val_loss": [float(value) for value in history.history.get("val_loss", [])],
+                },
+                "saved_model_path": MODEL_PATH,
+                "saved_scaler_path": SCALER_PATH,
+                "generated_at": datetime.utcnow().isoformat() + "Z"
+            }
+
+            with open(TRAINING_REPORT_PATH, "w", encoding="utf-8") as report_file:
+                json.dump(training_report, report_file, indent=2)
 
         st.success("Training Completed")
 
@@ -204,20 +247,29 @@ if uploaded_file is not None:
         if st.button("Predict"):
 
             engine = NeuralNetworkEngine()
-            engine.load_model("customer_model.keras")
-            engine.scaler = joblib.load("scaler.pkl")
+            engine.load_model(MODEL_PATH)
+            engine.scaler = joblib.load(SCALER_PATH)
 
             sample = np.array(user_input).reshape(1, -1)
 
             result = engine.predict(sample)
+
+            prediction_report = {
+                "generated_at": datetime.utcnow().isoformat() + "Z",
+                "prediction": result,
+                "features": [float(value) for value in user_input]
+            }
+
+            with open(PREDICTION_REPORT_PATH, "a", encoding="utf-8") as report_file:
+                report_file.write(json.dumps(prediction_report) + "\n")
 
             if result == "Purchased":
                 st.success("Prediction : Purchased")
             else:
                 st.error("Prediction : Not Purchased")
 
-        if os.path.exists("customer_model.keras"):
-            with open("customer_model.keras", "rb") as f:
+        if os.path.exists(MODEL_PATH):
+            with open(MODEL_PATH, "rb") as f:
                 st.download_button(
                     "Download Trained Model",
                     data=f,
