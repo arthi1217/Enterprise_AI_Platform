@@ -11,7 +11,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🛒 Customer Conversion Engine")
+st.title("Customer Conversion Engine")
 st.write("Neural Network Based Customer Purchase Prediction")
 
 if "trained" not in st.session_state:
