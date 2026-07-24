@@ -64,12 +64,25 @@ class TimeSeriesEngine:
             target_column
         ].sum()
 
-        self.series = grouped.asfreq(frequency)
-
-        self.series = self.series.ffill().bfill()
+        # This app forecasts aggregated activity (for example, daily revenue or
+        # order value). An interval without a row means no recorded activity,
+        # not a repeat of the previous interval's total. Forward-filling here
+        # created artificial plateaus and could make ARIMA and Prophet diverge
+        # for the wrong reason.
+        self.series = grouped.asfreq(frequency, fill_value=0.0).astype(float)
 
         if self.series.dropna().empty:
             raise ValueError("Time series data is empty after date aggregation.")
+        if len(self.series) < 8:
+            raise ValueError(
+                "Forecasting needs at least 8 aggregated time periods. "
+                "Choose a coarser frequency or provide more dated records."
+            )
+        if self.series.nunique() < 2:
+            raise ValueError(
+                "The selected target has no variation after aggregation, so it "
+                "cannot be forecast reliably."
+            )
 
         self.frequency = frequency
 
@@ -309,12 +322,29 @@ class TimeSeriesEngine:
 
         prophet = self.forecast_prophet(periods)
 
-        arima_values = self._clamp_to_series_scale(arima.values)
-        prophet_values = self._clamp_to_series_scale(prophet["yhat"].tail(periods).values)
+        # Compare values at the same timestamps. Using a positional tail can
+        # silently compare different calendar dates for weekly/monthly series.
         forecast_index = arima.index
+        prophet_by_date = prophet.set_index("ds")["yhat"]
+        prophet_values = prophet_by_date.reindex(forecast_index).to_numpy()
+        if np.isnan(prophet_values).any():
+            raise ValueError(
+                "Prophet and ARIMA produced different forecast timestamps. "
+                "Please select a supported daily, weekly, or monthly frequency."
+            )
+
+        arima_values = self._clamp_to_series_scale(arima.values)
+        prophet_values = self._clamp_to_series_scale(prophet_values)
+        absolute_difference = np.abs(arima_values - prophet_values)
+        series_scale = max(float(np.nanstd(self.series.values)), 1e-8)
 
         comparison = pd.DataFrame(
-            {"ARIMA": arima_values, "Prophet": prophet_values},
+            {
+                "ARIMA": arima_values,
+                "Prophet": prophet_values,
+                "Absolute difference": absolute_difference,
+                "Difference (series std)": absolute_difference / series_scale,
+            },
             index=forecast_index,
         )
 
@@ -436,13 +466,15 @@ class TimeSeriesEngine:
 
             self.forecast_prophet()
 
-        forecast_tail = self.prophet_forecast.tail(30).copy()
-        if "yhat" in forecast_tail.columns:
-            forecast_tail["yhat"] = self._clamp_to_series_scale(forecast_tail["yhat"].values)
+        future_rows = self.prophet_forecast[
+            self.prophet_forecast["ds"] > self.series.index.max()
+        ].copy()
+        if "yhat" in future_rows.columns:
+            future_rows["yhat"] = self._clamp_to_series_scale(future_rows["yhat"].values)
 
         fig, ax = plt.subplots(figsize=(12, 5))
         ax.plot(self.series.index, self.series.values, label="Historical")
-        ax.plot(forecast_tail["ds"], forecast_tail["yhat"], label="Prophet Forecast")
+        ax.plot(future_rows["ds"], future_rows["yhat"], label="Prophet Forecast")
         ax.set_title("Prophet forecast")
         ax.legend()
 
@@ -513,6 +545,17 @@ def run_time_series_engine(
     engine.build_prophet()
 
     comparison = engine.compare_models(forecast_periods)
+    agreement = pd.DataFrame(
+        [
+            {
+                "Mean absolute difference": comparison["Absolute difference"].mean(),
+                "Max absolute difference": comparison["Absolute difference"].max(),
+                "Mean difference (series std)": comparison[
+                    "Difference (series std)"
+                ].mean(),
+            }
+        ]
+    )
     validation = engine.validation_table(
         periods=min(forecast_periods, max(1, len(engine.series) // 4))
     )
@@ -520,6 +563,7 @@ def run_time_series_engine(
     return {
         "engine": engine,
         "comparison": comparison,
+        "forecast_agreement": agreement,
         "comparison_plot": engine.plot_forecast_comparison(forecast_periods),
         "trend_plot": engine.plot_trend(),
         "decomposition_plot": engine.plot_decomposition(),

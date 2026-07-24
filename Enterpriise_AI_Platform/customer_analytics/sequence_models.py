@@ -61,12 +61,30 @@ class SequenceModelEngine:
         else:
             data = np.asarray(data)
 
-        target = np.asarray(target)
+        target = np.asarray(target, dtype=np.float32).reshape(-1)
 
-        if data.shape[0] <= self.sequence_length + 1:
+        if data.ndim != 2:
+            raise ValueError("Sequence-model features must be a two-dimensional matrix.")
+        if data.shape[0] != len(target):
+            raise ValueError(
+                "The feature matrix and target column have different row counts. "
+                "Please preprocess the dataset again."
+            )
+        if data.shape[1] == 0:
+            raise ValueError("No usable features are available for sequence-model training.")
+        if not np.isfinite(target).all():
+            raise ValueError(
+                "The selected target column contains missing or non-finite values. "
+                "Choose a complete numeric target or clean the data first."
+            )
+
+        # A batch-normalized recurrent model needs at least two training windows,
+        # plus one held-out window for validation.
+        if data.shape[0] < self.sequence_length + 3:
             raise ValueError(
                 "Not enough samples to create sequences. "
-                f"Need more than {self.sequence_length + 1} rows."
+                f"Need at least {self.sequence_length + 3} rows for a sequence "
+                f"length of {self.sequence_length}."
             )
 
         X = []
@@ -467,6 +485,16 @@ def run_sequence_models(
     engine = SequenceModelEngine(
         sequence_length=sequence_length, l1_penalty=l1_penalty, l2_penalty=l2_penalty
     )
+
+    if not hasattr(X, "shape") or len(X.shape) != 2:
+        raise ValueError("Sequence-model features must be a two-dimensional matrix.")
+    if X.shape[0] != len(y):
+        raise ValueError(
+            "The feature matrix and target column have different row counts. "
+            "Please preprocess the dataset again."
+        )
+    if sequence_length < 1:
+        raise ValueError("Sequence length must be at least 1.")
 
     if sparse.issparse(X) and X.shape[1] > max_components:
         n_components = min(max_components, X.shape[1] - 1)

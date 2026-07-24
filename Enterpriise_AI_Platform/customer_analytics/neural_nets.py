@@ -110,10 +110,26 @@ class NeuralNetworkEngine:
             )
 
         counts = np.unique(y, return_counts=True)[1]
-        stratify = y if np.min(counts) >= 2 else None
+        if len(y) < 4 or np.min(counts) < 2:
+            raise ValueError(
+                "Neural networks need at least two rows for each binary target "
+                "class so both the training and validation sets contain both classes."
+            )
 
+        # Stratification is safe after the class-count validation above and keeps
+        # the validation metrics meaningful for imbalanced datasets.
+        stratify = y
+
+        # Stratified splitting needs at least one validation row per class. For
+        # very small valid datasets, increase the validation fraction accordingly
+        # instead of surfacing sklearn's low-level split error.
+        effective_test_size = max(test_size, len(unique_classes) / len(y))
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-            X, y, test_size=test_size, random_state=random_state, stratify=stratify
+            X,
+            y,
+            test_size=effective_test_size,
+            random_state=random_state,
+            stratify=stratify,
         )
 
         self.class_weights = calculate_class_weights(self.y_train)
@@ -454,6 +470,16 @@ def run_neural_network_module(
         epochs=12,
         batch_size=64,
     )
+
+    if not hasattr(X, "shape") or len(X.shape) != 2:
+        raise ValueError("Neural-network features must be a two-dimensional matrix.")
+    if X.shape[0] != len(y):
+        raise ValueError(
+            "The feature matrix and target column have different row counts. "
+            "Please preprocess the dataset again."
+        )
+    if X.shape[1] == 0:
+        raise ValueError("No usable features are available for neural-network training.")
 
     if sparse.issparse(X) and X.shape[1] > max_components:
         n_components = min(max_components, X.shape[1] - 1)

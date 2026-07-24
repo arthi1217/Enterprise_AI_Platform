@@ -29,6 +29,17 @@ PAGE_OPTIONS = [
     "Time series forecasting",
 ]
 
+PAGE_META = {
+    "Dashboard": ("Command center", ":material/dashboard:"),
+    "Data upload": ("Data intake", ":material/upload_file:"),
+    "Data preprocessing": ("Feature engineering", ":material/tune:"),
+    "Neural networks": ("Classification lab", ":material/neurology:"),
+    "Customer segmentation": ("Cluster studio", ":material/account_tree:"),
+    "NLP": ("Language intelligence", ":material/text_analysis:"),
+    "Sequence models": ("Sequence lab", ":material/timeline:"),
+    "Time series forecasting": ("Forecast studio", ":material/query_stats:"),
+}
+
 ID_HINTS = (
     "id",
     "uuid",
@@ -60,45 +71,163 @@ def inject_app_styles():
     st.markdown(
         """
         <style>
+        :root {
+            --panel: rgba(13, 27, 47, 0.82);
+            --panel-strong: #10233e;
+            --line: rgba(148, 185, 255, 0.16);
+            --muted: #91a6c7;
+            --cyan: #38d9ff;
+            --violet: #9b8cff;
+        }
+        .stApp {
+            background:
+                radial-gradient(circle at 88% -4%, rgba(56, 217, 255, 0.13), transparent 26rem),
+                radial-gradient(circle at -4% 56%, rgba(155, 140, 255, 0.11), transparent 28rem),
+                #07111f;
+        }
+        [data-testid="stHeader"] {
+            background: rgba(7, 17, 31, 0.76);
+            backdrop-filter: blur(18px);
+        }
         .block-container {
-            padding-top: 1.2rem;
-            padding-bottom: 1.5rem;
+            max-width: 1440px;
+            padding-top: 2rem;
+            padding-bottom: 2.5rem;
         }
         .app-hero {
-            border: 1px solid rgba(37, 99, 235, 0.15);
-            border-radius: 1.1rem;
-            padding: 1.25rem 1.5rem;
-            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(15, 23, 42, 0.03));
-            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(99, 213, 255, 0.24);
+            border-radius: 1.25rem;
+            padding: 1.7rem 1.8rem;
+            background: linear-gradient(120deg, rgba(13, 35, 62, 0.98), rgba(14, 27, 55, 0.86));
+            box-shadow: 0 22px 50px rgba(0, 0, 0, 0.2);
+            margin-bottom: 0.8rem;
+        }
+        .app-hero:after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(rgba(80, 177, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(80, 177, 255, 0.08) 1px, transparent 1px);
+            background-size: 30px 30px;
+            mask-image: linear-gradient(90deg, transparent, black);
+            pointer-events: none;
         }
         .app-hero h1 {
-            margin: 0 0 0.25rem 0;
-            font-size: 2rem;
-            line-height: 1.1;
+            position: relative;
+            margin: 0.35rem 0 0.5rem 0;
+            font-size: clamp(2rem, 4vw, 3rem);
+            letter-spacing: -0.055em;
+            line-height: 1;
+            color: #f5f9ff;
         }
         .app-hero p {
-            margin: 0.15rem 0 0 0;
-            color: rgba(15, 23, 42, 0.78);
-            font-size: 0.98rem;
+            position: relative;
+            max-width: 48rem;
+            margin: 0;
+            color: #b8c8e2;
+            font-size: 1rem;
         }
         .app-hero .eyebrow {
-            font-size: 0.78rem;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: #2563eb;
+            letter-spacing: 0.16em;
+            color: var(--cyan);
             font-weight: 700;
-            margin-bottom: 0.35rem;
+        }
+        .app-hero .eyebrow:before {
+            content: "";
+            width: 0.45rem;
+            height: 0.45rem;
+            border-radius: 999px;
+            background: #5ff2bc;
+            box-shadow: 0 0 0.7rem #5ff2bc;
+        }
+        .module-kicker {
+            margin-bottom: 0.25rem;
+            color: var(--cyan);
+            font-size: 0.7rem;
+            font-weight: 750;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
         }
         .app-footer {
             text-align: center;
-            color: rgba(15, 23, 42, 0.65);
-            font-size: 0.92rem;
-            margin-top: 1.5rem;
-            padding-top: 0.75rem;
-            border-top: 1px solid rgba(15, 23, 42, 0.08);
+            color: #7f95ba;
+            font-size: 0.8rem;
+            margin-top: 2rem;
+            padding-top: 1.1rem;
+            border-top: 1px solid var(--line);
         }
         section[data-testid="stSidebar"] {
-            border-right: 1px solid rgba(15, 23, 42, 0.08);
+            background: linear-gradient(180deg, #091729 0%, #07111f 100%);
+            border-right: 1px solid var(--line);
+        }
+        section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+            padding-top: 1rem;
+        }
+        .sidebar-brand {
+            padding: 0.9rem 0.2rem 1.1rem;
+        }
+        .sidebar-brand h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            color: #f4f8ff;
+            letter-spacing: -0.03em;
+        }
+        .sidebar-brand p {
+            margin: 0.35rem 0 0;
+            color: var(--muted);
+            font-size: 0.78rem;
+        }
+        [data-testid="stMetric"] {
+            background: linear-gradient(145deg, rgba(18, 39, 68, 0.9), rgba(10, 25, 45, 0.84));
+            border: 1px solid var(--line);
+            border-radius: 0.9rem;
+            padding: 0.9rem 1rem;
+            min-height: 6.2rem;
+        }
+        [data-testid="stMetricLabel"] { color: var(--muted); }
+        [data-testid="stMetricValue"] { color: #f2f7ff; }
+        [data-testid="stDataFrame"], [data-testid="stTable"] {
+            border: 1px solid var(--line);
+            border-radius: 0.85rem;
+            overflow: hidden;
+        }
+        [data-testid="stVerticalBlockBorderWrapper"] {
+            background: rgba(13, 27, 47, 0.64);
+            border-color: var(--line);
+            border-radius: 1rem;
+        }
+        div[data-baseweb="select"] > div, [data-testid="stTextInput"] input {
+            background: rgba(9, 24, 43, 0.9);
+            border-color: rgba(139, 180, 242, 0.24);
+        }
+        .stButton > button {
+            border: 1px solid rgba(86, 223, 255, 0.45);
+            border-radius: 0.65rem;
+            background: linear-gradient(135deg, #27c5ef, #5b77ff);
+            color: #03101d;
+            font-weight: 750;
+            box-shadow: 0 8px 22px rgba(46, 191, 255, 0.18);
+            transition: transform 160ms ease, box-shadow 160ms ease;
+        }
+        .stButton > button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 28px rgba(46, 191, 255, 0.3);
+            border-color: #b1efff;
+        }
+        [data-testid="stAlert"] {
+            border-radius: 0.75rem;
+            border: 1px solid var(--line);
+        }
+        [data-testid="stExpander"] {
+            border-color: var(--line);
+            border-radius: 0.8rem;
         }
         </style>
         """,
@@ -110,9 +239,9 @@ def render_hero():
     st.markdown(
         """
         <div class="app-hero">
-            <div class="eyebrow">Enterprise AI business intelligence platform</div>
-            <h1>Enterprise AI Platform</h1>
-            <p>Preprocessing, neural networks, customer segmentation, NLP, sequence models, and forecasting in one workspace.</p>
+            <div class="eyebrow">System online · Enterprise intelligence</div>
+            <h1>AI operations workspace</h1>
+            <p>From raw commerce data to explainable machine-learning signals — in one focused technical environment.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -208,15 +337,36 @@ def safe_selectbox(
 
 
 def render_page_title(title: str, subtitle: str):
+    module_name, _ = PAGE_META.get(title, ("Workspace", ":material/hub:"))
+    st.markdown(f'<div class="module-kicker">{module_name}</div>', unsafe_allow_html=True)
     st.subheader(title)
     st.caption(subtitle)
+
+
+def record_validation_metrics(module: str, model: str, metrics: dict):
+    """Store comparable scalar model metrics for the session dashboard."""
+    for metric, value in metrics.items():
+        if isinstance(value, (int, float, np.integer, np.floating)) and np.isfinite(value):
+            st.session_state.validation_records.append(
+                {
+                    "Module": module,
+                    "Model": model,
+                    "Metric": metric,
+                    "Value": float(value),
+                    "Recorded at": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),
+                }
+            )
 
 
 # ============================================================
 # PAGE CONFIG
 # ============================================================
 
-st.set_page_config(page_title="Enterprise AI Platform", page_icon="🤖", layout="wide")
+st.set_page_config(
+    page_title="AI operations workspace",
+    page_icon=":material/neurology:",
+    layout="wide",
+)
 inject_app_styles()
 
 # ============================================================
@@ -225,8 +375,8 @@ inject_app_styles()
 render_hero()
 st.markdown(
     """
-    <div style="margin-bottom: 1rem; color: rgba(15, 23, 42, 0.72);">
-        A professional workspace for Olist data preprocessing and model exploration.
+    <div style="margin: 0.1rem 0 1.35rem; color: #91a6c7; font-size: 0.86rem; letter-spacing: 0.02em;">
+        <span style="color: #5ff2bc;">●</span> READY &nbsp; / &nbsp; DATA · MODELS · FORECASTS
     </div>
     """,
     unsafe_allow_html=True,
@@ -242,21 +392,32 @@ if "processed_data" not in st.session_state:
 if "data" not in st.session_state:
     st.session_state.data = None
 
+if "validation_records" not in st.session_state:
+    st.session_state.validation_records = []
+
 # ============================================================
 # SIDEBAR
 # ============================================================
 
-with st.sidebar.container(border=True):
-    st.markdown("### Enterprise AI Platform")
-    st.caption("Choose a module and keep the workspace focused.")
+with st.sidebar:
+    st.markdown(
+        """
+        <div class="sidebar-brand">
+            <h2>Neural command</h2>
+            <p>Enterprise intelligence platform</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     page = st.selectbox(
-        "Navigation",
+        "Workspace module",
         PAGE_OPTIONS,
         index=0,
         key="sidebar_navigation",
     )
 
-st.sidebar.caption("Powered by Streamlit • TensorFlow • Scikit-learn")
+    st.caption("CORE STACK")
+    st.markdown(":blue-badge[Streamlit] :orange-badge[TensorFlow] :green-badge[Scikit-learn]")
 
 # ============================================================
 # DATA UPLOAD
@@ -327,6 +488,18 @@ if page == "Data upload":
 
             st.session_state.data = processed["raw_dataframe"]
 
+            diagnostics = processed.get("pipeline_diagnostics_table")
+            if isinstance(diagnostics, pd.DataFrame):
+                for _, row in diagnostics.iterrows():
+                    record_validation_metrics(
+                        "Transformation pipeline",
+                        str(row.get("Pipeline", "Pipeline")),
+                        {
+                            "Accuracy": row.get("Accuracy", np.nan),
+                            "F1 score": row.get("F1 Score", np.nan),
+                        },
+                    )
+
             st.success("Dataset Loaded Successfully ✅")
 
             st.write("### Dataset Information")
@@ -373,6 +546,18 @@ elif page == "Dashboard":
         col3.metric("Missing Values", int(raw_df.isnull().sum().sum()))
 
         col4.metric("Duplicate Rows", int(raw_df.duplicated().sum()))
+
+        if st.session_state.validation_records:
+            st.subheader("Validation performance matrix")
+            validation_matrix = pd.DataFrame(st.session_state.validation_records)
+            st.dataframe(validation_matrix, width="stretch", hide_index=True)
+            st.download_button(
+                "Download validation matrix",
+                validation_matrix.to_csv(index=False),
+                file_name="validation_performance_matrix.csv",
+                mime="text/csv",
+                icon=":material/download:",
+            )
 
         st.divider()
 
@@ -525,8 +710,17 @@ elif page == "Neural networks":
             except ValueError as exc:
                 st.warning(str(exc))
                 st.stop()
+            except Exception as exc:
+                st.error(f"Neural-network training failed: {exc}")
+                st.stop()
 
             st.success("Training Complete!")
+
+            record_validation_metrics(
+                "Customer conversion",
+                model_type.upper(),
+                {"Accuracy": results["results"]["accuracy"]},
+            )
 
             st.metric("Accuracy", f"{results['results']['accuracy']:.4f}")
 
@@ -601,8 +795,14 @@ elif page == "Customer segmentation":
                 except ValueError as exc:
                     st.warning(str(exc))
                     st.stop()
+                except Exception as exc:
+                    st.error(f"Customer-segmentation failed: {exc}")
+                    st.stop()
 
             st.success("Segmentation Completed Successfully ✅")
+
+            for model_name, metrics in results["metrics"].items():
+                record_validation_metrics("Customer segmentation", model_name, metrics)
 
             st.subheader("Clustering metrics")
             st.dataframe(pd.DataFrame(results["metrics"]).T, width="stretch")
@@ -683,6 +883,12 @@ elif page == "NLP":
 
             st.success("NLP Analysis Completed ✅")
 
+            record_validation_metrics(
+                "Sentiment and feedback",
+                "NLP pipeline",
+                {"Processed documents": results["summary"].get("documents", 0)},
+            )
+
             st.subheader("Sentiment summary")
             st.write(results["summary"])
 
@@ -762,15 +968,18 @@ elif page == "Sequence models":
 
             st.stop()
 
-        if len(feature_df) <= 6:
+        if len(feature_df) < 8:
 
             st.warning(
-                "Sequence models need more than 6 rows to build stable training windows."
+                "Sequence models need at least 8 rows to build training and validation windows."
             )
 
             st.stop()
 
-        max_sequence_length = min(30, len(feature_df) - 2)
+        # Keep at least three generated windows: two for training and one for
+        # validation. This also prevents BatchNormalization failures on a
+        # single-window training split.
+        max_sequence_length = min(30, len(feature_df) - 3)
         default_sequence_length = min(10, max_sequence_length)
 
         sequence_length = st.slider(
@@ -819,8 +1028,17 @@ elif page == "Sequence models":
                 except ValueError as exc:
                     st.warning(str(exc))
                     st.stop()
+                except Exception as exc:
+                    st.error(f"Sequence-model training failed: {exc}")
+                    st.stop()
 
             st.success("Training Completed Successfully ✅")
+
+            record_validation_metrics(
+                "Sequence and anomaly modeling",
+                model_type.upper(),
+                results["metrics"],
+            )
 
             if isinstance(results, dict):
 
@@ -875,6 +1093,9 @@ elif page == "Sequence models":
                     )
                 except ValueError as exc:
                     st.warning(str(exc))
+                    st.stop()
+                except Exception as exc:
+                    st.error(f"Sequence-model comparison failed: {exc}")
                     st.stop()
 
             st.success(f"Best model: {comparison['best_model']}")
@@ -948,6 +1169,9 @@ elif page == "Time series forecasting":
                 except ValueError as exc:
                     st.warning(str(exc))
                     st.stop()
+                except Exception as exc:
+                    st.error(f"Forecasting failed: {exc}")
+                    st.stop()
 
             st.success("Forecast Generated Successfully ✅")
 
@@ -979,6 +1203,17 @@ elif page == "Time series forecasting":
 
             st.subheader("Validation table")
             st.dataframe(results["validation_table"], width="stretch")
+            for _, row in results["validation_table"].iterrows():
+                record_validation_metrics(
+                    "Financial demand horizons",
+                    str(row["Model"]),
+                    {"RMSE": row["RMSE"], "MAE": row["MAE"], "MAPE": row["MAPE"]},
+                )
+            st.caption(
+                "ARIMA and Prophet use different assumptions, so different forecasts "
+                "are normal. Use the validation errors and the forecast-agreement "
+                "diagnostic to judge whether either forecast is credible."
+            )
 
         st.divider()
 

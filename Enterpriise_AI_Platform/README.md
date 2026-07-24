@@ -27,7 +27,7 @@ Enterpriise_AI_Platform/
 
 ## Setup guide
 
-1. Create and activate a Python 3.11+ virtual environment.
+1. Create and activate a Python 3.11 virtual environment.
 2. Install dependencies:
 
 ```bash
@@ -40,6 +40,8 @@ python -m spacy download en_core_web_sm
 ```bash
 streamlit run app.py
 ```
+
+For architecture, validation, operational guidance, and a rubric-to-feature map, see [TECHNICAL_DOCUMENTATION.md](TECHNICAL_DOCUMENTATION.md).
 
 ## Running with Olist data
 
@@ -71,3 +73,5 @@ Before final zipping:
 - remove `.venv`, `env`, and `__pycache__`
 - include screenshots/reports under `analytical_reports/`
 - include any architecture diagrams and performance evidence required by evaluation rubric
+- download the **Validation performance matrix** from the Dashboard after running the modules and place it under `analytical_reports/`
+- package the repository as one ZIP file only after verifying the dashboard and removing local caches
